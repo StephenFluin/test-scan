@@ -1,28 +1,31 @@
+## .github/workflows/herodevs-eol-scan.yml
 name: HeroDevs EOL Scan
 
 on:
-    push:
-        branches: [main]
-    pull_request:
-        branches: [main]
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-    scan:
-        runs-on: ubuntu-latest
-        environment: demo
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+  scan:
+    runs-on: ubuntu-latest
+    environment: demo
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
 
-            - name: Run EOL Scan
-              run: |
-                  docker run --rm \
-                    -v $GITHUB_WORKSPACE:/app \
-                    -w /app \
-                    ghcr.io/herodevs/eol-scan --save
+      - name: Run EOL Scan
+        run: |
+          docker run --name eol-scanner \
+            -v $GITHUB_WORKSPACE:/app \
+            -w /app \
+            ghcr.io/herodevs/eol-scan --save --output /tmp/herodevs.report.json
+          docker cp eol-scanner:/tmp/herodevs.report.json ${{ runner.temp }}/herodevs.report.json
+          docker rm eol-scanner
 
-            - name: Upload artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: my-eol-report
-                  path: ./herodevs.report.json
+      - name: Upload artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: my-eol-report
+          path: ${{ runner.temp }}/herodevs.report.json
